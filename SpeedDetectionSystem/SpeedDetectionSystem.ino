@@ -14,8 +14,6 @@ int downButton = 0;
 int rightButton = 0;
 
 bool isTagRead = false;
-bool doesRfid1Read = false;
-bool doesRfid2Read = false;
 
 double entranceExitTimerV1_1 = 0;
 double entranceExitTimerV1_2 = 0;
@@ -94,8 +92,6 @@ void CheckIfVehiclePresentWithRFID()
 {
   if ((rfid1.isCard() && rfid1.readCardSerial()) && !isTagRead)
   {
-    doesRfid1Read = true;
-
     switch (rfid1.serNum[0])
     {
       case 83:
@@ -109,7 +105,9 @@ void CheckIfVehiclePresentWithRFID()
       break;
     } 
 
-    if (doesRfid2Read) 
+    if ((entranceExitTimerV1_1 > 0 && entranceExitTimerV1_2 > 0) ||
+        (entranceExitTimerV2_1 > 0 && entranceExitTimerV2_2 > 0) ||
+        (entranceExitTimerV3_1 > 0 && entranceExitTimerV3_2 > 0)) 
     {
       switch (rfid1.serNum[0])
       {
@@ -127,9 +125,7 @@ void CheckIfVehiclePresentWithRFID()
   }
   else if ((rfid2.isCard() && rfid2.readCardSerial()) && !isTagRead)
   {
-    doesRfid2Read = true;
-
-    switch (rfid1.serNum[0])
+    switch (rfid2.serNum[0])
     {
       case 83:
       entranceExitTimerV1_2 = millis();
@@ -142,7 +138,9 @@ void CheckIfVehiclePresentWithRFID()
       break;
     }
 
-    if (doesRfid1Read) 
+    if ((entranceExitTimerV1_1 > 0 && entranceExitTimerV1_2 > 0) ||
+        (entranceExitTimerV2_1 > 0 && entranceExitTimerV2_2 > 0) ||
+        (entranceExitTimerV3_1 > 0 && entranceExitTimerV3_2 > 0)) 
     {
       switch (rfid2.serNum[0])
       {
@@ -174,12 +172,15 @@ void DetectVehicle(int vehicleType)
   {
     case 1:
     CalculateVehicleSpeedAndRatio(1, 0.1, entranceExitTimerV1_2 - entranceExitTimerV1_1); // for car
+    entranceExitTimerV1_2 = 0; entranceExitTimerV1_1 = 0;
     break;
     case 2:
     CalculateVehicleSpeedAndRatio(2, 0.1, entranceExitTimerV2_2 - entranceExitTimerV2_1); // for motor
+    entranceExitTimerV2_2 = 0; entranceExitTimerV2_1 = 0;
     break;
     case 3:
     CalculateVehicleSpeedAndRatio(3, 0.6, entranceExitTimerV3_2 - entranceExitTimerV3_1); // for truck
+    entranceExitTimerV3_2 = 0; entranceExitTimerV3_1 = 0;
     break;
   }
 
@@ -189,8 +190,6 @@ void DetectVehicle(int vehicleType)
 
 void CalculateVehicleSpeedAndRatio(int vehicleNumber, double vehicleSpeedLimit, double timeSpent)
 {
-  doesRfid1Read = false;
-  doesRfid2Read = false;
 
   vehicleSpeed = (laneLength / 100) / (abs(timeSpent) / 1000);
   vehicleExceedingRatio = ((vehicleSpeed - vehicleSpeedLimit) / vehicleSpeedLimit * 100);
